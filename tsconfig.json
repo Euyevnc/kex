@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "es6",
+    "target": "es6",
+    "lib": ["esnext", "dom", "es6", "dom.iterable", "scriptHost"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "strict": true,
+    "baseUrl": "./src"
+  },
+  "include": ["./src"],
+  "exclude": ["node_modules", "**/node_modules/*"]
+}
