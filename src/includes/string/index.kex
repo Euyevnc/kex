@@ -1,1 +1,3 @@
 <p class="string"><%= it.word %></p>
+
+<%# main, {hello: 'HAIL'}%>

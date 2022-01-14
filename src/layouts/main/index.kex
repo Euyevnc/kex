@@ -1,0 +1,4 @@
+<body>
+  layout, <%= it.hello %>
+  <%~ it.body %>
+</body>

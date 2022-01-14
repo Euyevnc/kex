@@ -59,7 +59,8 @@ function ParseErr(message, str, indx) {
 /**
  * @returns The global Promise function
  */
-new Function('return this')().Promise;
+new Function("return this")()
+    .Promise;
 /**
  * str.trimLeft polyfill
  *
@@ -73,7 +74,7 @@ function trimLeft(str) {
         return str.trimLeft();
     }
     else {
-        return str.replace(/^\s+/, '');
+        return str.replace(/^\s+/, "");
     }
 }
 /**
@@ -89,7 +90,7 @@ function trimRight(str) {
         return str.trimRight();
     }
     else {
-        return str.replace(/\s+$/, ''); // TODO: do we really need to replace BOM's?
+        return str.replace(/\s+$/, ""); // TODO: do we really need to replace BOM's?
     }
 }
 
@@ -117,25 +118,24 @@ function trimWS(str, config, wsLeft, wsRight) {
     if (!rightTrim && !leftTrim) {
         return str;
     }
-    if (leftTrim === 'slurp' && rightTrim === 'slurp') {
+    if (leftTrim === "slurp" && rightTrim === "slurp") {
         return str.trim();
     }
-    if (leftTrim === '_' || leftTrim === 'slurp') {
-        // console.log('trimming left' + leftTrim)
+    if (leftTrim === "_" || leftTrim === "slurp") {
         // full slurp
         str = trimLeft(str);
     }
-    else if (leftTrim === '-' || leftTrim === 'nl') {
+    else if (leftTrim === "-" || leftTrim === "nl") {
         // nl trim
-        str = str.replace(/^(?:\r\n|\n|\r)/, '');
+        str = str.replace(/^(?:\r\n|\n|\r)/, "");
     }
-    if (rightTrim === '_' || rightTrim === 'slurp') {
+    if (rightTrim === "_" || rightTrim === "slurp") {
         // full slurp
         str = trimRight(str);
     }
-    else if (rightTrim === '-' || rightTrim === 'nl') {
+    else if (rightTrim === "-" || rightTrim === "nl") {
         // nl trim
-        str = str.replace(/(?:\r\n|\n|\r)$/, ''); // TODO: make sure this gets \r\n
+        str = str.replace(/(?:\r\n|\n|\r)$/, ""); // TODO: make sure this gets \r\n
     }
     return str;
 }
@@ -286,7 +286,7 @@ function parse(str, config) {
     return buffer;
 }
 
-const defaultConfig = {
+var defineConfig = {
     layoutsPath: "src/layouts",
     inclusionsPath: "src/includes",
     parse: {
@@ -302,29 +302,16 @@ const defaultConfig = {
     varName: "it",
 };
 
+var config = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    'default': defineConfig
+});
+
 /* END TYPES */
-/**
- * Takes a template string and returns a template function that can be called with (data, config, [cb])
- *
- * @param str - The template string
- * @param config - A custom configuration object (optional)
- *
- * **Example**
- *
- * ```js
- * let compiledFn = eta.compile("Hi <%= it.user %>")
- * // function anonymous()
- * let compiledFnStr = compiledFn.toString()
- * // "function anonymous(it,E,cb\n) {\nvar tR='',include=E.include.bind(E),includeFile=E.includeFile.bind(E);tR+='Hi ';tR+=E.e(it.user);if(cb){cb(null,tR)} return tR\n}"
- * ```
- */
 function compile(str, config) {
-    const options = config || defaultConfig;
-    /* ASYNC HANDLING */
-    // The below code is modified from mde/ejs. All credit should go to them.
-    /* END ASYNC HANDLING */
+    const options = config || defineConfig;
     try {
-        return new Function(options.varName, "E", // EtaConfig
+        return new Function(options.varName, "E", // Config
         compileToString(str, options)); // eslint-disable-line no-new-func
     }
     catch (e) {
@@ -344,6 +331,16 @@ function compile(str, config) {
     }
 }
 
+function getInclusionPath(name, config) {
+    const options = config || defineConfig;
+    const path = `${options.inclusionsPath}/${name}/index.kex`;
+    return path;
+}
+function getLayoutPath(name, config) {
+    const options = config || defineConfig;
+    const path = `${options.layoutsPath}/${name}/index.kex`;
+    return path;
+}
 function readFile(filePath) {
     try {
         return fs.readFileSync(filePath).toString();
@@ -367,36 +364,18 @@ function readFile(filePath) {
 function compileToString(str, config) {
     const buffer = parse(str, config);
     let res = "let tR='',__l,__lP" +
-        (config.include ? ",include=E.include.bind(E)" : "") +
-        (config.includeFile ? ",includeFile=E.includeFile.bind(E)" : "") +
         "\nfunction layout(p,d){__l=p;__lP=d}\n" +
         (config.useWith ? "with(" + config.varName + "||{}){" : "") +
         compileScope(buffer, config) +
-        (config.includeFile
-            ? "if(__l)tR=" +
-                (config.async ? "await " : "") +
-                `includeFile(__l,Object.assign(${config.varName},{body:tR},__lP))\n`
-            : config.include
-                ? "if(__l)tR=" +
-                    (config.async ? "await " : "") +
-                    `include(__l,Object.assign(${config.varName},{body:tR},__lP))\n`
-                : "") +
         "return tR" +
         (config.useWith ? "}" : "");
-    if (config.plugins) {
-        for (let i = 0; i < config.plugins.length; i++) {
-            const plugin = config.plugins[i];
-            if (plugin.processFnString) {
-                res = plugin.processFnString(res, config);
-            }
-        }
-    }
     return res;
 }
 function compileScope(buff, config) {
     let i = 0;
     const buffLength = buff.length;
     let returnStr = "";
+    let layoutCall = "";
     for (i; i < buffLength; i++) {
         const currentBlock = buff[i];
         if (typeof currentBlock === "string") {
@@ -429,16 +408,27 @@ function compileScope(buff, config) {
                 const match = content.match(/\s*(\w+)\s*,\s*({.+})/);
                 const inclusionName = (match === null || match === void 0 ? void 0 : match[1]) || "";
                 const inclusionArgs = match === null || match === void 0 ? void 0 : match[2];
-                const filePath = `${config.inclusionsPath}/${inclusionName}/index.kex`;
+                const filePath = getInclusionPath(inclusionName);
                 const fileTemplate = readFile(filePath);
                 content = `(${compile(fileTemplate)})(${inclusionArgs})`;
                 returnStr += "tR+=" + content + "\n";
+            }
+            else if (type === "lay") {
+                layoutCall = content;
             }
             else if (type === "e") {
                 // execute
                 returnStr += content + "\n"; // you need a \n in case you have <% } %>
             }
         }
+    }
+    if (layoutCall) {
+        const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})/);
+        const layoutName = (match === null || match === void 0 ? void 0 : match[1]) || "";
+        const layoutArgs = match === null || match === void 0 ? void 0 : match[2];
+        const layoutPath = getLayoutPath(layoutName);
+        const fileTemplate = readFile(layoutPath);
+        returnStr = `tR = (${compile(fileTemplate)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
     }
     return returnStr;
 }
@@ -452,6 +442,6 @@ function render(template, data, config) {
 
 exports.compile = compile;
 exports.compileToString = compileToString;
-exports.defaultConfig = defaultConfig;
+exports.defaultConfig = config;
 exports.parse = parse;
 exports.render = render;

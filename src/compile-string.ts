@@ -1,6 +1,6 @@
 import parse from "./parse";
 import compile from "compile";
-import { getInclusionPath, readFile } from "file-utils";
+import { getInclusionPath, getLayoutPath, readFile } from "file-utils";
 /* TYPES */
 
 import type { AstObject } from "./parse";
@@ -28,15 +28,6 @@ export default function compileToString(
     "\nfunction layout(p,d){__l=p;__lP=d}\n" +
     (config.useWith ? "with(" + config.varName + "||{}){" : "") +
     compileScope(buffer, config) +
-    (config.includeFile
-      ? "if(__l)tR=" +
-        (config.async ? "await " : "") +
-        `includeFile(__l,Object.assign(${config.varName},{body:tR},__lP))\n`
-      : config.include
-      ? "if(__l)tR=" +
-        (config.async ? "await " : "") +
-        `include(__l,Object.assign(${config.varName},{body:tR},__lP))\n`
-      : "") +
     "return tR" +
     (config.useWith ? "}" : "");
   return res;
@@ -46,7 +37,7 @@ function compileScope(buff: Array<AstObject>, config: Record<string, any>) {
   let i = 0;
   const buffLength = buff.length;
   let returnStr = "";
-
+  let layoutCall = "";
   for (i; i < buffLength; i++) {
     const currentBlock = buff[i];
     if (typeof currentBlock === "string") {
@@ -88,11 +79,26 @@ function compileScope(buff: Array<AstObject>, config: Record<string, any>) {
 
         content = `(${compile(fileTemplate)})(${inclusionArgs})`;
         returnStr += "tR+=" + content + "\n";
+      } else if (type === "lay") {
+        layoutCall = content;
       } else if (type === "e") {
         // execute
         returnStr += content + "\n"; // you need a \n in case you have <% } %>
       }
     }
+  }
+
+  if (layoutCall) {
+    const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})/);
+    const layoutName = match?.[1] || "";
+    const layoutArgs = match?.[2];
+
+    const layoutPath = getLayoutPath(layoutName);
+    const fileTemplate = readFile(layoutPath);
+
+    returnStr = `tR = (${compile(fileTemplate)})(Object.assign(${
+      config.varName
+    }, {body: tR}, ${layoutArgs}))\n`;
   }
 
   return returnStr;

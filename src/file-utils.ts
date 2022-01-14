@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 
-import { defineConfig } from "rollup";
+import defineConfig from "config";
 
 function getInclusionPath(name: string, config?: Record<string, any>): string {
   const options = config || defineConfig;
@@ -11,7 +11,7 @@ function getInclusionPath(name: string, config?: Record<string, any>): string {
 
 function getLayoutPath(name: string, config?: Record<string, any>): string {
   const options = config || defineConfig;
-  const path = `${options.layoutPath}/${name}/index.kex`;
+  const path = `${options.layoutsPath}/${name}/index.kex`;
 
   return path;
 }
