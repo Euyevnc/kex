@@ -1,6 +1,12 @@
 import fs from "fs";
 import express from "express";
+
 import Kex from "../src/index";
+import { readFile, getViewPath } from "../src/file-utils";
+
+/* TYPES */
+import type { TemplateFunction } from "./../src/compile";
+/* END TYPES */
 
 const app = express();
 const host = "localhost";
@@ -9,16 +15,13 @@ const port = 8000;
 app.use(express.static("public"));
 
 let TEST_PREC_FIRST_REQ = true;
-const kex = new Kex();
-app.get("/tests-precomp", async (req: any, res: any) => {
+const views = compileViews(new Kex());
+
+app.get("/test", async (req: any, res: any) => {
   const reqReceived = Date.now();
   let NOTICE_FOR_LOG = "kex";
 
-  const parsedComments = JSON.parse(
-    fs.readFileSync("tests/HNData.json", "utf8")
-  );
-
-  res.status(200).send();
+  res.status(200).send(views.test({}));
 
   fs.writeFile(
     "tests/serv-logs.txt",
@@ -45,5 +48,16 @@ app.get("/tests-precomp", async (req: any, res: any) => {
 app.listen(port, host, function () {
   console.log(`Server listens http://${host}:${port}`);
 });
+
+function compileViews(kex: Kex) {
+  const config = kex.getConfig();
+  const viewNames = fs.readdirSync(config.viewsPath);
+  const compiledViews: Record<string, TemplateFunction> = {};
+  viewNames.forEach((viewName) => {
+    compiledViews[viewName] = kex.compileView(viewName);
+  });
+
+  return compiledViews;
+}
 
 export {};

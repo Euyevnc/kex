@@ -1,16 +1,5 @@
 import Err from "./err";
 
-/**
- * @returns The global Promise function
- */
-
-export const promiseImpl: PromiseConstructor = new Function("return this")()
-  .Promise;
-
-/**
- * @returns A new AsyncFunction constuctor
- */
-
 export function getAsyncFunctionConstructor(): Function {
   try {
     return new Function("return (async function(){}).constructor")();

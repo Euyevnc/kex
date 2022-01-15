@@ -11,7 +11,6 @@ export interface TemplateObject {
 }
 
 export type AstObject = string | TemplateObject;
-
 /* END TYPES */
 
 const templateLitReg =

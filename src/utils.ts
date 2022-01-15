@@ -26,10 +26,6 @@ export function copyProps<T>(toObj: T, fromObj: T): T {
   return toObj;
 }
 
-/**
- * Takes a string within a template and trims it, based on the preceding tag's whitespace control and `config.autoTrim`
- */
-
 function trimWS(
   str: string,
   config: Config,
