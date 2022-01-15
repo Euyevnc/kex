@@ -1,7 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 var fs = require('fs');
 
 function setPrototypeOf(obj, proto) {
@@ -13,26 +11,13 @@ function setPrototypeOf(obj, proto) {
         obj.__proto__ = proto;
     }
 }
-// This is pretty much the only way to get nice, extended Errors
-// without using ES6
-/**
- * This returns a new Error with a custom prototype. Note that it's _not_ a constructor
- *
- * @param message Error message
- *
- * **Example**
- *
- * ```js
- * throw EtaErr("template not found")
- * ```
- */
 function EtaErr(message) {
     const err = new Error(message);
     setPrototypeOf(err, EtaErr.prototype);
     return err;
 }
 EtaErr.prototype = Object.create(Error.prototype, {
-    name: { value: 'Eta Error', enumerable: false }
+    name: { value: "Eta Error", enumerable: false },
 });
 /**
  * Throws an EtaErr with a nicely formatted error and message showing where in the template the error occurred.
@@ -42,17 +27,17 @@ function ParseErr(message, str, indx) {
     const lineNo = whitespace.length;
     const colNo = whitespace[lineNo - 1].length + 1;
     message +=
-        ' at line ' +
+        " at line " +
             lineNo +
-            ' col ' +
+            " col " +
             colNo +
-            ':\n\n' +
-            '  ' +
+            ":\n\n" +
+            "  " +
             str.split(/\n/)[lineNo - 1] +
-            '\n' +
-            '  ' +
-            Array(colNo).join(' ') +
-            '^';
+            "\n" +
+            "  " +
+            Array(colNo).join(" ") +
+            "^";
     throw EtaErr(message);
 }
 
@@ -101,8 +86,6 @@ function trimWS(str, config, wsLeft, wsRight) {
     let leftTrim;
     let rightTrim;
     if (Array.isArray(config.autoTrim)) {
-        // kinda confusing
-        // but _}} will trim the left side of the following string
         leftTrim = config.autoTrim[1];
         rightTrim = config.autoTrim[0];
     }
@@ -122,11 +105,9 @@ function trimWS(str, config, wsLeft, wsRight) {
         return str.trim();
     }
     if (leftTrim === "_" || leftTrim === "slurp") {
-        // full slurp
         str = trimLeft(str);
     }
     else if (leftTrim === "-" || leftTrim === "nl") {
-        // nl trim
         str = str.replace(/^(?:\r\n|\n|\r)/, "");
     }
     if (rightTrim === "_" || rightTrim === "slurp") {
@@ -138,6 +119,36 @@ function trimWS(str, config, wsLeft, wsRight) {
         str = str.replace(/(?:\r\n|\n|\r)$/, ""); // TODO: make sure this gets \r\n
     }
     return str;
+}
+/**
+ * A map of special HTML characters to their XML-escaped equivalents
+ */
+const escMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+};
+function replaceChar(s) {
+    return escMap[s];
+}
+/**
+ * XML-escapes an input value after converting it to a string
+ *
+ * @param str - Input value (usually a string)
+ * @returns XML-escaped string
+ */
+function XMLEscape(str) {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
+    // To deal with XSS. Based on Escape implementations of Mustache.JS and Marko, then customized.
+    const newStr = String(str);
+    if (/[&<>"']/.test(newStr)) {
+        return newStr.replace(/[&<>"']/g, replaceChar);
+    }
+    else {
+        return newStr;
+    }
 }
 
 /* END TYPES */
@@ -286,58 +297,14 @@ function parse(str, config) {
     return buffer;
 }
 
-var defineConfig = {
-    layoutsPath: "src/layouts",
-    inclusionsPath: "src/includes",
-    parse: {
-        exec: "",
-        interpolate: "=",
-        raw: "~",
-        include: "+",
-        layout: "#",
-    },
-    rmWhitespace: false,
-    tags: ["<%", "%>"],
-    useWith: false,
-    varName: "it",
-};
-
-var config = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    'default': defineConfig
-});
-
 /* END TYPES */
-function compile(str, config) {
-    const options = config || defineConfig;
-    try {
-        return new Function(options.varName, "E", // Config
-        compileToString(str, options)); // eslint-disable-line no-new-func
-    }
-    catch (e) {
-        if (e instanceof SyntaxError) {
-            throw EtaErr("Bad template syntax\n\n" +
-                e.message +
-                "\n" +
-                Array(e.message.length + 1).join("=") +
-                "\n" +
-                compileToString(str, options) +
-                "\n" // This will put an extra newline before the callstack for extra readability
-            );
-        }
-        else {
-            throw e;
-        }
-    }
-}
-
 function getInclusionPath(name, config) {
-    const options = config || defineConfig;
+    const options = config;
     const path = `${options.inclusionsPath}/${name}/index.kex`;
     return path;
 }
 function getLayoutPath(name, config) {
-    const options = config || defineConfig;
+    const options = config;
     const path = `${options.layoutsPath}/${name}/index.kex`;
     return path;
 }
@@ -351,20 +318,9 @@ function readFile(filePath) {
 }
 
 /* END TYPES */
-/**
- * Compiles a template string to a function string. Most often users just use `compile()`, which calls `compileToString` and creates a new function using the result
- *
- * **Example**
- *
- * ```js
- * compileToString("Hi <%= it.user %>", eta.config)
- * // "var tR='',include=E.include.bind(E),includeFile=E.includeFile.bind(E);tR+='Hi ';tR+=E.e(it.user);if(cb){cb(null,tR)} return tR"
- * ```
- */
 function compileToString(str, config) {
     const buffer = parse(str, config);
-    let res = "let tR='',__l,__lP" +
-        "\nfunction layout(p,d){__l=p;__lP=d}\n" +
+    let res = "let tR=''\n" +
         (config.useWith ? "with(" + config.varName + "||{}){" : "") +
         compileScope(buffer, config) +
         "return tR" +
@@ -387,17 +343,9 @@ function compileScope(buff, config) {
             const type = currentBlock.t;
             let content = currentBlock.val || "";
             if (type === "r") {
-                // raw
-                if (config.filter) {
-                    content = "E.filter(" + content + ")";
-                }
                 returnStr += "tR+=" + content + "\n";
             }
             else if (type === "i") {
-                // interpolate
-                if (config.filter) {
-                    content = "E.filter(" + content + ")";
-                }
                 if (config.autoEscape) {
                     content = "E.e(" + content + ")";
                 }
@@ -408,9 +356,9 @@ function compileScope(buff, config) {
                 const match = content.match(/\s*(\w+)\s*,\s*({.+})/);
                 const inclusionName = (match === null || match === void 0 ? void 0 : match[1]) || "";
                 const inclusionArgs = match === null || match === void 0 ? void 0 : match[2];
-                const filePath = getInclusionPath(inclusionName);
+                const filePath = getInclusionPath(inclusionName, config);
                 const fileTemplate = readFile(filePath);
-                content = `(${compile(fileTemplate)})(${inclusionArgs})`;
+                content = `(${compile(fileTemplate, config)})(${inclusionArgs})`;
                 returnStr += "tR+=" + content + "\n";
             }
             else if (type === "lay") {
@@ -426,11 +374,56 @@ function compileScope(buff, config) {
         const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})/);
         const layoutName = (match === null || match === void 0 ? void 0 : match[1]) || "";
         const layoutArgs = match === null || match === void 0 ? void 0 : match[2];
-        const layoutPath = getLayoutPath(layoutName);
+        const layoutPath = getLayoutPath(layoutName, config);
         const fileTemplate = readFile(layoutPath);
-        returnStr = `tR = (${compile(fileTemplate)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
+        returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
     }
     return returnStr;
+}
+
+/* END TYPES */
+const defaultConfig = {
+    autoEscape: true,
+    autoTrim: [false, "nl"],
+    e: XMLEscape,
+    parse: {
+        exec: "",
+        interpolate: "=",
+        raw: "~",
+        include: "+",
+        layout: "#",
+    },
+    rmWhitespace: false,
+    tags: ["<%", "%>"],
+    useWith: false,
+    varName: "it",
+    layoutsPath: "src/layouts",
+    inclusionsPath: "src/includes",
+    viewsPath: "src/views",
+};
+
+/* END TYPES */
+function compile(str, config) {
+    const options = config || defaultConfig;
+    try {
+        return new Function(options.varName, "E", // Config
+        compileToString(str, options)); // eslint-disable-line no-new-func
+    }
+    catch (e) {
+        if (e instanceof SyntaxError) {
+            throw EtaErr("Bad template syntax\n\n" +
+                e.message +
+                "\n" +
+                Array(e.message.length + 1).join("=") +
+                "\n" +
+                compileToString(str, options) +
+                "\n" // This will put an extra newline before the callstack for extra readability
+            );
+        }
+        else {
+            throw e;
+        }
+    }
 }
 
 /* TYPES */
@@ -440,8 +433,29 @@ function render(template, data, config) {
     return compile(template, config)(data);
 }
 
-exports.compile = compile;
-exports.compileToString = compileToString;
-exports.defaultConfig = config;
-exports.parse = parse;
-exports.render = render;
+/* END TYPES */
+class Kex {
+    constructor(option) {
+        this.getConfig = () => {
+            return this.option;
+        };
+        this.setConfig = (newParams) => {
+            this.option = Object.assign(Object.assign({}, this.option), newParams);
+        };
+        this.compileString = (template) => {
+            return compile(template, this.option);
+        };
+        this.compileView = (viewName) => {
+            return viewName; //TODO
+        };
+        this.renderString = (tempalte, data) => {
+            return render(tempalte, data, this.option);
+        };
+        this.renderView = (viewName) => {
+            return viewName; //TODO
+        };
+        this.option = Object.assign(Object.assign({}, defaultConfig), option);
+    }
+}
+
+module.exports = Kex;

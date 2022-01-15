@@ -1,6 +1,7 @@
 import { trimLeft, trimRight } from "./polyfills";
 
 /* TYPES */
+import type { Config } from "config";
 
 interface EscapeMap {
   "&": "&amp;";
@@ -10,7 +11,6 @@ interface EscapeMap {
   "'": "&#39;";
   [index: string]: string;
 }
-
 /* END TYPES */
 
 export function hasOwnProp(obj: object, prop: string): boolean {
@@ -32,7 +32,7 @@ export function copyProps<T>(toObj: T, fromObj: T): T {
 
 function trimWS(
   str: string,
-  config: Record<string, unknown>,
+  config: Config,
   wsLeft: string | false,
   wsRight?: string | false
 ): string {
@@ -40,8 +40,6 @@ function trimWS(
   let rightTrim;
 
   if (Array.isArray(config.autoTrim)) {
-    // kinda confusing
-    // but _}} will trim the left side of the following string
     leftTrim = config.autoTrim[1];
     rightTrim = config.autoTrim[0];
   } else {
@@ -65,11 +63,8 @@ function trimWS(
   }
 
   if (leftTrim === "_" || leftTrim === "slurp") {
-    // full slurp
-
     str = trimLeft(str);
   } else if (leftTrim === "-" || leftTrim === "nl") {
-    // nl trim
     str = str.replace(/^(?:\r\n|\n|\r)/, "");
   }
 

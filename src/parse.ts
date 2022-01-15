@@ -2,7 +2,7 @@ import { ParseErr } from "./err";
 import { trimWS } from "./utils";
 
 /* TYPES */
-
+import { Config } from "config";
 export type TagType = "r" | "e" | "i" | "inc" | "lay" | "";
 
 export interface TemplateObject {
@@ -26,10 +26,7 @@ function escapeRegExp(string: string) {
   return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
 
-export default function parse(
-  str: string,
-  config: Record<string, any>
-): Array<AstObject> {
+export default function parse(str: string, config: Config): Array<AstObject> {
   let buffer: Array<AstObject> = [];
   let trimLeftOfNextStr: string | false = false;
   let lastIndex = 0;

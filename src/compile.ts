@@ -1,17 +1,13 @@
 import compileToString from "./compile-string";
-import defaultConfig, { Config } from "./config";
+import defaultConfig from "./config";
 import EtaErr from "./err";
 
 /* TYPES */
-
+import type { Config } from "./config";
 export type TemplateFunction = (data: object) => string;
-
 /* END TYPES */
 
-export default function compile(
-  str: string,
-  config?: Config
-): TemplateFunction {
+export default function compile(str: string, config: Config): TemplateFunction {
   const options: Config = config || defaultConfig;
 
   try {

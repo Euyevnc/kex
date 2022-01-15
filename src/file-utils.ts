@@ -1,17 +1,26 @@
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 
-import defineConfig from "config";
+/* TYPES */
+import { Config } from "config";
+/* END TYPES */
 
-function getInclusionPath(name: string, config?: Record<string, any>): string {
-  const options = config || defineConfig;
+function getInclusionPath(name: string, config: Config): string {
+  const options = config;
   const path = `${options.inclusionsPath}/${name}/index.kex`;
 
   return path;
 }
 
-function getLayoutPath(name: string, config?: Record<string, any>): string {
-  const options = config || defineConfig;
+function getLayoutPath(name: string, config: Config): string {
+  const options = config;
   const path = `${options.layoutsPath}/${name}/index.kex`;
+
+  return path;
+}
+
+function getViewPath(name: string, config: Config): string {
+  const options = config;
+  const path = `${options.viewsPath}/${name}/index.kex`;
 
   return path;
 }
@@ -24,4 +33,4 @@ function readFile(filePath: string): string {
   }
 }
 
-export { getLayoutPath, getInclusionPath, readFile };
+export { getLayoutPath, getInclusionPath, getViewPath, readFile };

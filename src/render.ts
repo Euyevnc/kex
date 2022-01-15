@@ -10,7 +10,7 @@ import compile from "./compile";
 export default function render(
   template: string,
   data: object,
-  config?: Config
+  config: Config
 ): string | Promise<string> | void {
   return compile(template, config)(data);
 }

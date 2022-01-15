@@ -1,31 +1,17 @@
 import parse from "./parse";
 import compile from "compile";
 import { getInclusionPath, getLayoutPath, readFile } from "file-utils";
-/* TYPES */
 
+/* TYPES */
 import type { AstObject } from "./parse";
+import type { Config } from "config";
 /* END TYPES */
 
-/**
- * Compiles a template string to a function string. Most often users just use `compile()`, which calls `compileToString` and creates a new function using the result
- *
- * **Example**
- *
- * ```js
- * compileToString("Hi <%= it.user %>", eta.config)
- * // "var tR='',include=E.include.bind(E),includeFile=E.includeFile.bind(E);tR+='Hi ';tR+=E.e(it.user);if(cb){cb(null,tR)} return tR"
- * ```
- */
-
-export default function compileToString(
-  str: string,
-  config: Record<string, any>
-): string {
+export default function compileToString(str: string, config: Config): string {
   const buffer: Array<AstObject> = parse(str, config);
 
   let res =
-    "let tR='',__l,__lP" +
-    "\nfunction layout(p,d){__l=p;__lP=d}\n" +
+    "let tR=''\n" +
     (config.useWith ? "with(" + config.varName + "||{}){" : "") +
     compileScope(buffer, config) +
     "return tR" +
@@ -33,7 +19,7 @@ export default function compileToString(
   return res;
 }
 
-function compileScope(buff: Array<AstObject>, config: Record<string, any>) {
+function compileScope(buff: Array<AstObject>, config: Config) {
   let i = 0;
   const buffLength = buff.length;
   let returnStr = "";
@@ -50,20 +36,8 @@ function compileScope(buff: Array<AstObject>, config: Record<string, any>) {
       let content = currentBlock.val || "";
 
       if (type === "r") {
-        // raw
-
-        if (config.filter) {
-          content = "E.filter(" + content + ")";
-        }
-
         returnStr += "tR+=" + content + "\n";
       } else if (type === "i") {
-        // interpolate
-
-        if (config.filter) {
-          content = "E.filter(" + content + ")";
-        }
-
         if (config.autoEscape) {
           content = "E.e(" + content + ")";
         }
@@ -74,10 +48,9 @@ function compileScope(buff: Array<AstObject>, config: Record<string, any>) {
         const inclusionName = match?.[1] || "";
         const inclusionArgs = match?.[2];
 
-        const filePath = getInclusionPath(inclusionName);
-        const fileTemplate = readFile(filePath);
+        const fileTemplate = readFile(getInclusionPath(inclusionName, config));
 
-        content = `(${compile(fileTemplate)})(${inclusionArgs})`;
+        content = `(${compile(fileTemplate, config)})(${inclusionArgs})`;
         returnStr += "tR+=" + content + "\n";
       } else if (type === "lay") {
         layoutCall = content;
@@ -93,10 +66,9 @@ function compileScope(buff: Array<AstObject>, config: Record<string, any>) {
     const layoutName = match?.[1] || "";
     const layoutArgs = match?.[2];
 
-    const layoutPath = getLayoutPath(layoutName);
-    const fileTemplate = readFile(layoutPath);
+    const fileTemplate = readFile(getLayoutPath(layoutName, config));
 
-    returnStr = `tR = (${compile(fileTemplate)})(Object.assign(${
+    returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${
       config.varName
     }, {body: tR}, ${layoutArgs}))\n`;
   }
