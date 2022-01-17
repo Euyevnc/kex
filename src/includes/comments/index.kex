@@ -1,0 +1,16 @@
+<article class="comment">
+  <div class="comment__body">
+    <div class="comment__meta">
+      <span class="comment__author"><%= it.comment.author %></span>
+      <% const date = new Date(it.comment.time) %>
+      <span class="comment__time"><%=date.toLocaleString()%></span>
+      <span class="comment__id">№<%=it.comment.id %></span>
+    </div>
+    <p class="comment__content"><%~it.comment.content%></p>
+  </div>
+  <div class="comment__tree">
+    <% it.comment.kids.forEach( function(kidComment){ %> 
+      <%+ comments, {comment: kidComment }) %> 
+    <% }) %>
+  </div>
+</article>

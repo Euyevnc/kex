@@ -16,11 +16,13 @@ app.use(express.static("public"));
 let TEST_PREC_FIRST_REQ = true;
 const views = compileViews(new Kex());
 
-app.get("/", async (req: any, res: any) => {
+app.get("/test", async (req: any, res: any) => {
   const reqReceived = Date.now();
   let NOTICE_FOR_LOG = "kex";
-  console.log(views.home.toString());
-  res.status(200).send(views.home({ name: "Victor" }));
+
+  const comments = JSON.parse(fs.readFileSync("tests/HNData.json", "utf8"));
+
+  res.status(200).send(views.test({ comments: comments }));
 
   const endProc = Date.now();
   fs.writeFile(

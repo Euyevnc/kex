@@ -163,8 +163,6 @@ function replaceChar(s) {
  * @returns XML-escaped string
  */
 function XMLEscape(str) {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
-    // To deal with XSS. Based on Escape implementations of Mustache.JS and Marko, then customized.
     const newStr = String(str);
     if (/[&<>"']/.test(newStr)) {
         return newStr.replace(/[&<>"']/g, replaceChar);
@@ -179,7 +177,6 @@ const templateLitReg = /`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)
 const singleQuoteReg = /'(?:\\[\s\w"'\\`]|[^\n\r'\\])*?'/g;
 const doubleQuoteReg = /"(?:\\[\s\w"'\\`]|[^\n\r"\\])*?"/g;
 function escapeRegExp(string) {
-    // From MDN
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
 function parse(str, config) {
@@ -187,7 +184,6 @@ function parse(str, config) {
     let trimLeftOfNextStr = false;
     let lastIndex = 0;
     const parseOptions = config.parse;
-    /* Adding for EJS compatibility */
     if (config.rmWhitespace) {
         // Code taken directly from EJS
         // Have to use two separate replaces here as `^` and `$` operators don't
@@ -401,7 +397,7 @@ function compileScope(buff, config) {
         const layoutName = (match === null || match === void 0 ? void 0 : match[1]) || "";
         const layoutArgs = match === null || match === void 0 ? void 0 : match[2];
         const fileTemplate = readFile(getLayoutPath(layoutName, config));
-        returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
+        returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs || "{}"}))\n`;
     }
     return returnStr;
 }
@@ -429,6 +425,7 @@ const defaultConfig = {
 
 /* END TYPES */
 function compile(str, config) {
+    console.log(str);
     const options = config || defaultConfig;
     try {
         return new Function(options.varName, compileToString(str, options));
@@ -491,11 +488,11 @@ const port = 8000;
 app.use(express__default["default"].static("public"));
 let TEST_PREC_FIRST_REQ = true;
 const views = compileViews(new Kex());
-app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/test", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const reqReceived = Date.now();
     let NOTICE_FOR_LOG = "kex";
-    console.log(views.home.toString());
-    res.status(200).send(views.home({ name: "Victor" }));
+    const comments = JSON.parse(fs__default["default"].readFileSync("tests/HNData.json", "utf8"));
+    res.status(200).send(views.test({ comments: comments }));
     const endProc = Date.now();
     fs__default["default"].writeFile("tests/serv-logs.txt", `${TEST_PREC_FIRST_REQ ? "\n" : ""}Time: ${new Date().toLocaleString()}. Render duration: ${endProc - reqReceived}ms. Source: ${TEST_PREC_FIRST_REQ ? "render" : "cache"}. Details: ${NOTICE_FOR_LOG}\n`, { flag: "a+" }, function (err) {
         if (err) {

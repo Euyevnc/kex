@@ -21,7 +21,6 @@ const singleQuoteReg = /'(?:\\[\s\w"'\\`]|[^\n\r'\\])*?'/g;
 const doubleQuoteReg = /"(?:\\[\s\w"'\\`]|[^\n\r"\\])*?"/g;
 
 function escapeRegExp(string: string) {
-  // From MDN
   return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
 
@@ -31,7 +30,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
   let lastIndex = 0;
   const parseOptions = config.parse;
 
-  /* Adding for EJS compatibility */
   if (config.rmWhitespace) {
     // Code taken directly from EJS
     // Have to use two separate replaces here as `^` and `$` operators don't

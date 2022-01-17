@@ -22,6 +22,7 @@ export default function compileToString(str: string, config: Config): string {
 function compileScope(buff: Array<AstObject>, config: Config) {
   let i = 0;
   const buffLength = buff.length;
+  let returnDec = "";
   let returnStr = "";
   let layoutCall = "";
   for (i; i < buffLength; i++) {
@@ -69,7 +70,7 @@ function compileScope(buff: Array<AstObject>, config: Config) {
 
     returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${
       config.varName
-    }, {body: tR}, ${layoutArgs}))\n`;
+    }, {body: tR}, ${layoutArgs || "{}"}))\n`;
   }
 
   return returnStr;
