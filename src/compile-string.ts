@@ -29,7 +29,6 @@ function compileScope(buff: Array<AstObject>, config: Config) {
     if (typeof currentBlock === "string") {
       const str = currentBlock;
 
-      // we know string exists
       returnStr += "tR+='" + str + "'\n";
     } else {
       const type = currentBlock.t;
@@ -39,7 +38,7 @@ function compileScope(buff: Array<AstObject>, config: Config) {
         returnStr += "tR+=" + content + "\n";
       } else if (type === "i") {
         if (config.autoEscape) {
-          content = "E.e(" + content + ")";
+          content = config.e.toString() + `(${content})`;
         }
         returnStr += "tR+=" + content + "\n";
         // reference
@@ -62,7 +61,7 @@ function compileScope(buff: Array<AstObject>, config: Config) {
   }
 
   if (layoutCall) {
-    const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})/);
+    const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})?/);
     const layoutName = match?.[1] || "";
     const layoutArgs = match?.[2];
 

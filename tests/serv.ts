@@ -2,7 +2,6 @@ import fs from "fs";
 import express from "express";
 
 import Kex from "../src/index";
-import { readFile, getViewPath } from "../src/file-utils";
 
 /* TYPES */
 import type { TemplateFunction } from "./../src/compile";
@@ -17,19 +16,20 @@ app.use(express.static("public"));
 let TEST_PREC_FIRST_REQ = true;
 const views = compileViews(new Kex());
 
-app.get("/test", async (req: any, res: any) => {
+app.get("/", async (req: any, res: any) => {
   const reqReceived = Date.now();
   let NOTICE_FOR_LOG = "kex";
+  console.log(views.home.toString());
+  res.status(200).send(views.home({ name: "Victor" }));
 
-  res.status(200).send(views.test({}));
-
+  const endProc = Date.now();
   fs.writeFile(
     "tests/serv-logs.txt",
 
     `${
       TEST_PREC_FIRST_REQ ? "\n" : ""
     }Time: ${new Date().toLocaleString()}. Render duration: ${
-      Date.now() - reqReceived
+      endProc - reqReceived
     }ms. Source: ${
       TEST_PREC_FIRST_REQ ? "render" : "cache"
     }. Details: ${NOTICE_FOR_LOG}\n`,

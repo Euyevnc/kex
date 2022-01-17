@@ -1,6 +1,37 @@
 'use strict';
 
 var fs = require('fs');
+var express = require('express');
+
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+var fs__default = /*#__PURE__*/_interopDefaultLegacy(fs);
+var express__default = /*#__PURE__*/_interopDefaultLegacy(express);
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
 
 function setPrototypeOf(obj, proto) {
     // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -42,11 +73,6 @@ function ParseErr(message, str, indx) {
 }
 
 /**
- * @returns The global Promise function
- */
-new Function("return this")()
-    .Promise;
-/**
  * str.trimLeft polyfill
  *
  * @param str - Input string
@@ -79,9 +105,6 @@ function trimRight(str) {
     }
 }
 
-/**
- * Takes a string within a template and trims it, based on the preceding tag's whitespace control and `config.autoTrim`
- */
 function trimWS(str, config, wsLeft, wsRight) {
     let leftTrim;
     let rightTrim;
@@ -308,6 +331,11 @@ function getLayoutPath(name, config) {
     const path = `${options.layoutsPath}/${name}/index.kex`;
     return path;
 }
+function getViewPath(name, config) {
+    const options = config;
+    const path = `${options.viewsPath}/${name}/index.kex`;
+    return path;
+}
 function readFile(filePath) {
     try {
         return fs.readFileSync(filePath).toString();
@@ -336,7 +364,6 @@ function compileScope(buff, config) {
         const currentBlock = buff[i];
         if (typeof currentBlock === "string") {
             const str = currentBlock;
-            // we know string exists
             returnStr += "tR+='" + str + "'\n";
         }
         else {
@@ -347,7 +374,7 @@ function compileScope(buff, config) {
             }
             else if (type === "i") {
                 if (config.autoEscape) {
-                    content = "E.e(" + content + ")";
+                    content = config.e.toString() + `(${content})`;
                 }
                 returnStr += "tR+=" + content + "\n";
                 // reference
@@ -356,8 +383,7 @@ function compileScope(buff, config) {
                 const match = content.match(/\s*(\w+)\s*,\s*({.+})/);
                 const inclusionName = (match === null || match === void 0 ? void 0 : match[1]) || "";
                 const inclusionArgs = match === null || match === void 0 ? void 0 : match[2];
-                const filePath = getInclusionPath(inclusionName, config);
-                const fileTemplate = readFile(filePath);
+                const fileTemplate = readFile(getInclusionPath(inclusionName, config));
                 content = `(${compile(fileTemplate, config)})(${inclusionArgs})`;
                 returnStr += "tR+=" + content + "\n";
             }
@@ -371,11 +397,10 @@ function compileScope(buff, config) {
         }
     }
     if (layoutCall) {
-        const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})/);
+        const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})?/);
         const layoutName = (match === null || match === void 0 ? void 0 : match[1]) || "";
         const layoutArgs = match === null || match === void 0 ? void 0 : match[2];
-        const layoutPath = getLayoutPath(layoutName, config);
-        const fileTemplate = readFile(layoutPath);
+        const fileTemplate = readFile(getLayoutPath(layoutName, config));
         returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
     }
     return returnStr;
@@ -406,8 +431,7 @@ const defaultConfig = {
 function compile(str, config) {
     const options = config || defaultConfig;
     try {
-        return new Function(options.varName, "E", // Config
-        compileToString(str, options)); // eslint-disable-line no-new-func
+        return new Function(options.varName, compileToString(str, options));
     }
     catch (e) {
         if (e instanceof SyntaxError) {
@@ -437,25 +461,59 @@ function render(template, data, config) {
 class Kex {
     constructor(option) {
         this.getConfig = () => {
-            return this.option;
+            return this.config;
         };
         this.setConfig = (newParams) => {
-            this.option = Object.assign(Object.assign({}, this.option), newParams);
+            this.config = Object.assign(Object.assign({}, this.config), newParams);
         };
         this.compileString = (template) => {
-            return compile(template, this.option);
+            return compile(template, this.config);
         };
         this.compileView = (viewName) => {
-            return viewName; //TODO
+            const viewTemplate = readFile(getViewPath(viewName, this.config));
+            return compile(viewTemplate, this.config);
         };
         this.renderString = (tempalte, data) => {
-            return render(tempalte, data, this.option);
+            return render(tempalte, data, this.config);
         };
-        this.renderView = (viewName) => {
-            return viewName; //TODO
+        this.renderView = (viewName, data) => {
+            const viewTemplate = readFile(getViewPath(viewName, this.config));
+            return render(viewTemplate, data, this.config);
         };
-        this.option = Object.assign(Object.assign({}, defaultConfig), option);
+        this.config = option ? Object.assign(Object.assign({}, defaultConfig), option) : defaultConfig;
     }
 }
 
-module.exports = Kex;
+/* END TYPES */
+const app = express__default["default"]();
+const host = "localhost";
+const port = 8000;
+app.use(express__default["default"].static("public"));
+let TEST_PREC_FIRST_REQ = true;
+const views = compileViews(new Kex());
+app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const reqReceived = Date.now();
+    let NOTICE_FOR_LOG = "kex";
+    console.log(views.home.toString());
+    res.status(200).send(views.home({ name: "Victor" }));
+    const endProc = Date.now();
+    fs__default["default"].writeFile("tests/serv-logs.txt", `${TEST_PREC_FIRST_REQ ? "\n" : ""}Time: ${new Date().toLocaleString()}. Render duration: ${endProc - reqReceived}ms. Source: ${TEST_PREC_FIRST_REQ ? "render" : "cache"}. Details: ${NOTICE_FOR_LOG}\n`, { flag: "a+" }, function (err) {
+        if (err) {
+            return console.log(err);
+        }
+        console.log("The logs was saved!");
+    });
+    TEST_PREC_FIRST_REQ = false;
+}));
+app.listen(port, host, function () {
+    console.log(`Server listens http://${host}:${port}`);
+});
+function compileViews(kex) {
+    const config = kex.getConfig();
+    const viewNames = fs__default["default"].readdirSync(config.viewsPath);
+    const compiledViews = {};
+    viewNames.forEach((viewName) => {
+        compiledViews[viewName] = kex.compileView(viewName);
+    });
+    return compiledViews;
+}

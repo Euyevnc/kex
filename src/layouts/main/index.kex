@@ -1,4 +1,7 @@
+<!DOCTYPE html> 
+<html>
+<header> home </header>
 <body>
-  layout, <%= it.hello %>
   <%~ it.body %>
 </body>
+</html>

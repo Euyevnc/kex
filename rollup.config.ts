@@ -1,15 +1,13 @@
 import typescript from "@rollup/plugin-typescript";
 
 const pluginConfig = {
-  input: `src/index.ts`,
+  input: `tests/serv.ts`,
   output: {
     dir: "build",
     format: "cjs",
   },
 
-  plugins: [
-    typescript({ lib: ["es6"], target: "es6" }),
-  ],
+  plugins: [typescript({ lib: ["es6"], target: "es6" })],
 };
 
 export default [pluginConfig];

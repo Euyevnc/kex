@@ -4,7 +4,7 @@ import EtaErr from "./err";
 
 /* TYPES */
 import type { Config } from "./config";
-export type TemplateFunction = (data: object) => string;
+export type TemplateFunction = (data?: object) => string;
 /* END TYPES */
 
 export default function compile(str: string, config: Config): TemplateFunction {
@@ -13,9 +13,8 @@ export default function compile(str: string, config: Config): TemplateFunction {
   try {
     return new Function(
       options.varName,
-      "E", // Config
       compileToString(str, options)
-    ) as TemplateFunction; // eslint-disable-line no-new-func
+    ) as TemplateFunction;
   } catch (e) {
     if (e instanceof SyntaxError) {
       throw EtaErr(
