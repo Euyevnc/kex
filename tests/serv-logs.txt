@@ -87,3 +87,74 @@ Time: 17.01.2022, 16:52:32. Render duration: 6ms. Source: cache. Details: kex
 Time: 17.01.2022, 16:52:32. Render duration: 6ms. Source: cache. Details: kex
 
 Time: 17.01.2022, 16:53:41. Render duration: 35ms. Source: render. Details: kex
+
+Time: 18.01.2022, 17:37:42. Render duration: 97ms. Source: render. Details: kex
+Time: 18.01.2022, 17:37:48. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:50. Render duration: 11ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:52. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:53. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:54. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:54. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:55. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:55. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:56. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:56. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:56. Render duration: 7ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:57. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:57. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:57. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:37:58. Render duration: 8ms. Source: cache. Details: kex
+
+Time: 18.01.2022, 17:53:47. Render duration: 25ms. Source: render. Details: kex
+Time: 18.01.2022, 17:53:50. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:53:53. Render duration: 11ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:53:53. Render duration: 14ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:53:54. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 17:53:54. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:21:29. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:21:32. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:21:35. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:21:36. Render duration: 9ms. Source: cache. Details: kex
+
+Time: 18.01.2022, 18:33:45. Render duration: 25ms. Source: render. Details: kex
+Time: 18.01.2022, 18:33:47. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:48. Render duration: 11ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:49. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:53. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:55. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:56. Render duration: 12ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:56. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:57. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:58. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:33:58. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 18:34:18. Render duration: 9ms. Source: cache. Details: kex
+
+Time: 18.01.2022, 20:05:01. Render duration: 25ms. Source: render. Details: kex
+Time: 18.01.2022, 20:05:05. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:05:08. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:05:09. Render duration: 10ms. Source: cache. Details: kex
+
+Time: 18.01.2022, 20:07:32. Render duration: 23ms. Source: render. Details: kex
+Time: 18.01.2022, 20:07:34. Render duration: 11ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:07:40. Render duration: 11ms. Source: cache. Details: kex
+
+Time: 18.01.2022, 20:15:11. Render duration: 24ms. Source: render. Details: kex
+
+Time: 18.01.2022, 20:33:50. Render duration: 28ms. Source: render. Details: kex
+Time: 18.01.2022, 20:33:51. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:52. Render duration: 11ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:53. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:53. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:54. Render duration: 11ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:54. Render duration: 10ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:54. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:54. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:55. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:55. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:55. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:55. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:33:56. Render duration: 8ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:34:11. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:34:11. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:34:12. Render duration: 9ms. Source: cache. Details: kex
+Time: 18.01.2022, 20:34:12. Render duration: 10ms. Source: cache. Details: kex

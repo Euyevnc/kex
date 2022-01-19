@@ -16,6 +16,13 @@ app.use(express.static("public"));
 let TEST_PREC_FIRST_REQ = true;
 const views = compileViews(new Kex());
 
+fs.writeFile("tests/serv-logs.js", views.test.toString(), function (err) {
+  if (err) {
+    return console.log(err);
+  }
+  console.log("The logs was saved!");
+});
+
 app.get("/test", async (req: any, res: any) => {
   const reqReceived = Date.now();
   let NOTICE_FOR_LOG = "kex";

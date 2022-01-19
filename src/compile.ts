@@ -1,3 +1,4 @@
+import fs from "fs";
 import compileToString from "./compile-string";
 import defaultConfig from "./config";
 import EtaErr from "./err";

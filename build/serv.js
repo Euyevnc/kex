@@ -322,11 +322,6 @@ function getInclusionPath(name, config) {
     const path = `${options.inclusionsPath}/${name}/index.kex`;
     return path;
 }
-function getLayoutPath(name, config) {
-    const options = config;
-    const path = `${options.layoutsPath}/${name}/index.kex`;
-    return path;
-}
 function getViewPath(name, config) {
     const options = config;
     const path = `${options.viewsPath}/${name}/index.kex`;
@@ -342,20 +337,22 @@ function readFile(filePath) {
 }
 
 /* END TYPES */
-function compileToString(str, config) {
+function compileToString(str, config, cache) {
+    const compileCache = cache || { declarations: "" };
     const buffer = parse(str, config);
     let res = "let tR=''\n" +
         (config.useWith ? "with(" + config.varName + "||{}){" : "") +
-        compileScope(buffer, config) +
+        compileScope(buffer, config, compileCache) +
         "return tR" +
         (config.useWith ? "}" : "");
-    return res;
+    if (cache)
+        return res;
+    return compileCache.declarations + res;
 }
-function compileScope(buff, config) {
+function compileScope(buff, config, cache) {
     let i = 0;
     const buffLength = buff.length;
     let returnStr = "";
-    let layoutCall = "";
     for (i; i < buffLength; i++) {
         const currentBlock = buff[i];
         if (typeof currentBlock === "string") {
@@ -369,8 +366,15 @@ function compileScope(buff, config) {
                 returnStr += "tR+=" + content + "\n";
             }
             else if (type === "i") {
+                const escapeIsExist = cache.escape;
+                if (!escapeIsExist) {
+                    cache.escape = true;
+                    cache.declarations =
+                        cache.declarations +
+                            `function escape(string){ return ${config.e.toString()}(string) }\n`;
+                }
                 if (config.autoEscape) {
-                    content = config.e.toString() + `(${content})`;
+                    content = `escape(${content})`;
                 }
                 returnStr += "tR+=" + content + "\n";
                 // reference
@@ -379,26 +383,33 @@ function compileScope(buff, config) {
                 const match = content.match(/\s*(\w+)\s*,\s*({.+})/);
                 const inclusionName = (match === null || match === void 0 ? void 0 : match[1]) || "";
                 const inclusionArgs = match === null || match === void 0 ? void 0 : match[2];
-                const fileTemplate = readFile(getInclusionPath(inclusionName, config));
-                content = `(${compile(fileTemplate, config)})(${inclusionArgs})`;
+                const inclusionAreCached = cache.hasOwnProperty(inclusionName);
+                if (!inclusionAreCached) {
+                    const fileTemplate = readFile(getInclusionPath(inclusionName, config));
+                    cache[inclusionName] = true;
+                    const includeFunctionDec = `function ${inclusionName}(${config.varName})` +
+                        `{${compileToString(fileTemplate, config, cache)}}\n`;
+                    cache.declarations = cache.declarations + includeFunctionDec;
+                }
+                content = `${inclusionName}(${inclusionArgs})`;
                 returnStr += "tR+=" + content + "\n";
             }
-            else if (type === "lay") {
-                layoutCall = content;
-            }
+            else if (type === "lay") ;
             else if (type === "e") {
                 // execute
                 returnStr += content + "\n"; // you need a \n in case you have <% } %>
             }
         }
     }
-    if (layoutCall) {
-        const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})?/);
-        const layoutName = (match === null || match === void 0 ? void 0 : match[1]) || "";
-        const layoutArgs = match === null || match === void 0 ? void 0 : match[2];
-        const fileTemplate = readFile(getLayoutPath(layoutName, config));
-        returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${config.varName}, {body: tR}, ${layoutArgs || "{}"}))\n`;
-    }
+    // if (layoutCall) {
+    //   const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})?/);
+    //   const layoutName = match?.[1] || "";
+    //   const layoutArgs = match?.[2];
+    //   const fileTemplate = readFile(getLayoutPath(layoutName, config));
+    //   returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${
+    //     config.varName
+    //   }, {body: tR}, ${layoutArgs}))\n`;
+    // }
     return returnStr;
 }
 
@@ -425,7 +436,6 @@ const defaultConfig = {
 
 /* END TYPES */
 function compile(str, config) {
-    console.log(str);
     const options = config || defaultConfig;
     try {
         return new Function(options.varName, compileToString(str, options));
@@ -447,13 +457,6 @@ function compile(str, config) {
     }
 }
 
-/* TYPES */
-// import type { EtaConfig, PartialConfig } from './config'
-/* END TYPES */
-function render(template, data, config) {
-    return compile(template, config)(data);
-}
-
 /* END TYPES */
 class Kex {
     constructor(option) {
@@ -471,11 +474,11 @@ class Kex {
             return compile(viewTemplate, this.config);
         };
         this.renderString = (tempalte, data) => {
-            return render(tempalte, data, this.config);
+            return compile(tempalte, this.config)(data);
         };
         this.renderView = (viewName, data) => {
             const viewTemplate = readFile(getViewPath(viewName, this.config));
-            return render(viewTemplate, data, this.config);
+            return compile(viewTemplate, this.config)(data);
         };
         this.config = option ? Object.assign(Object.assign({}, defaultConfig), option) : defaultConfig;
     }
@@ -488,6 +491,12 @@ const port = 8000;
 app.use(express__default["default"].static("public"));
 let TEST_PREC_FIRST_REQ = true;
 const views = compileViews(new Kex());
+fs__default["default"].writeFile("tests/serv-logs.js", views.test.toString(), function (err) {
+    if (err) {
+        return console.log(err);
+    }
+    console.log("The logs was saved!");
+});
 app.get("/test", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const reqReceived = Date.now();
     let NOTICE_FOR_LOG = "kex";

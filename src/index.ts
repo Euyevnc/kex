@@ -10,10 +10,8 @@ export type { PartialConfig, Config };
 
 export default class Kex {
   private config: Config;
-  private cach: Record<string, TemplateFunction>;
   constructor(option?: PartialConfig) {
     this.config = option ? { ...defaultConfig, ...option } : defaultConfig;
-    this.cach = {};
   }
 
   getConfig = () => {

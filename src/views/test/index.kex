@@ -4,4 +4,4 @@
   </main>
 </section>
 
-<%# main, {} %>
+<%# main, {viewName: 'test'} %>
