@@ -5,7 +5,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin typescript",
-    "test": "yarn run build && node build/serv.js"
+    "srv": "yarn run build && node build/serv.js"
   },
   "repository": {
     "type": "git",

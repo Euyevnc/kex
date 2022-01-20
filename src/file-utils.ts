@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 
 /* TYPES */
-import { Config } from "config";
+import type Config from "config";
 /* END TYPES */
 
 function getInclusionPath(name: string, config: Config): string {

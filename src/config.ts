@@ -2,11 +2,11 @@ import { XMLEscape } from "./utils";
 
 /* TYPES */
 type trimConfig = "nl" | "slurp" | false;
+/* END TYPES */
 
-export type Config = {
+class Config {
   autoEscape: boolean;
   autoTrim: trimConfig | [trimConfig, trimConfig];
-  e: (str: string) => string;
   parse: Record<string, string>;
   rmWhitespace: boolean;
   tags: string[];
@@ -16,30 +16,28 @@ export type Config = {
   layoutsPath: string;
   inclusionsPath: string;
   viewsPath: string;
-};
 
-export type PartialConfig = Partial<Config>;
-/* END TYPES */
+  escape = XMLEscape;
 
-const defaultConfig: Config = {
-  autoEscape: true,
-  autoTrim: [false, "nl"],
-  e: XMLEscape,
+  constructor(props?: Config) {
+    this.autoEscape = true;
+    this.autoTrim = [false, "nl"];
+    this.parse = {
+      exec: "",
+      interpolate: "=",
+      raw: "~",
+      include: "+",
+      layout: "#",
+    };
+    this.rmWhitespace = false;
+    this.tags = ["<%", "%>"];
+    this.useWith = false;
+    this.varName = "it";
 
-  parse: {
-    exec: "",
-    interpolate: "=",
-    raw: "~",
-    include: "+",
-    layout: "#",
-  },
-  rmWhitespace: false,
-  tags: ["<%", "%>"],
-  useWith: false,
-  varName: "it",
+    this.layoutsPath = "src/layouts";
+    this.inclusionsPath = "src/includes";
+    this.viewsPath = "src/views";
+  }
+}
 
-  layoutsPath: "src/layouts",
-  inclusionsPath: "src/includes",
-  viewsPath: "src/views",
-};
-export default defaultConfig;
+export default Config;

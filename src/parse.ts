@@ -2,7 +2,7 @@ import { ParseErr } from "./err";
 import { trimWS } from "./utils";
 
 /* TYPES */
-import { Config } from "config";
+import type Config from "config";
 export type TagType = "r" | "e" | "i" | "inc" | "lay" | "";
 
 export interface TemplateObject {

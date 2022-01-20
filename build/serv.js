@@ -322,6 +322,11 @@ function getInclusionPath(name, config) {
     const path = `${options.inclusionsPath}/${name}/index.kex`;
     return path;
 }
+function getLayoutPath(name, config) {
+    const options = config;
+    const path = `${options.layoutsPath}/${name}/index.kex`;
+    return path;
+}
 function getViewPath(name, config) {
     const options = config;
     const path = `${options.viewsPath}/${name}/index.kex`;
@@ -338,21 +343,21 @@ function readFile(filePath) {
 
 /* END TYPES */
 function compileToString(str, config, cache) {
-    const compileCache = cache || { declarations: "" };
     const buffer = parse(str, config);
     let res = "let tR=''\n" +
         (config.useWith ? "with(" + config.varName + "||{}){" : "") +
-        compileScope(buffer, config, compileCache) +
+        compileScope(buffer, config, cache) +
         "return tR" +
         (config.useWith ? "}" : "");
     if (cache)
         return res;
-    return compileCache.declarations + res;
+    return res;
 }
 function compileScope(buff, config, cache) {
     let i = 0;
     const buffLength = buff.length;
     let returnStr = "";
+    let layoutContent = "";
     for (i; i < buffLength; i++) {
         const currentBlock = buff[i];
         if (typeof currentBlock === "string") {
@@ -366,15 +371,12 @@ function compileScope(buff, config, cache) {
                 returnStr += "tR+=" + content + "\n";
             }
             else if (type === "i") {
-                const escapeIsExist = cache.escape;
-                if (!escapeIsExist) {
-                    cache.escape = true;
-                    cache.declarations =
-                        cache.declarations +
-                            `function escape(string){ return ${config.e.toString()}(string) }\n`;
-                }
                 if (config.autoEscape) {
-                    content = `escape(${content})`;
+                    const fnIsCached = cache.checkCache("escape");
+                    if (!fnIsCached) {
+                        cache.addToCache("escape", () => config.escape);
+                    }
+                    content = `cache.escape(${content})`;
                 }
                 returnStr += "tR+=" + content + "\n";
                 // reference
@@ -383,62 +385,37 @@ function compileScope(buff, config, cache) {
                 const match = content.match(/\s*(\w+)\s*,\s*({.+})/);
                 const inclusionName = (match === null || match === void 0 ? void 0 : match[1]) || "";
                 const inclusionArgs = match === null || match === void 0 ? void 0 : match[2];
-                const inclusionAreCached = cache.hasOwnProperty(inclusionName);
-                if (!inclusionAreCached) {
-                    const fileTemplate = readFile(getInclusionPath(inclusionName, config));
-                    cache[inclusionName] = true;
-                    const includeFunctionDec = `function ${inclusionName}(${config.varName})` +
-                        `{${compileToString(fileTemplate, config, cache)}}\n`;
-                    cache.declarations = cache.declarations + includeFunctionDec;
-                }
-                content = `${inclusionName}(${inclusionArgs})`;
+                const fnIsCached = cache.checkCache(inclusionName);
+                if (!fnIsCached)
+                    cache.addToCache(inclusionName, () => compile(readFile(getInclusionPath(inclusionName, config)), config, cache));
+                content = `cache.${inclusionName}(cache, ${inclusionArgs})`;
                 returnStr += "tR+=" + content + "\n";
             }
-            else if (type === "lay") ;
+            else if (type === "lay") {
+                layoutContent = content;
+            }
             else if (type === "e") {
                 // execute
                 returnStr += content + "\n"; // you need a \n in case you have <% } %>
             }
         }
     }
-    // if (layoutCall) {
-    //   const match = layoutCall.match(/\s*(\w+)\s*,\s*({.+})?/);
-    //   const layoutName = match?.[1] || "";
-    //   const layoutArgs = match?.[2];
-    //   const fileTemplate = readFile(getLayoutPath(layoutName, config));
-    //   returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${
-    //     config.varName
-    //   }, {body: tR}, ${layoutArgs}))\n`;
-    // }
+    if (layoutContent) {
+        const match = layoutContent.match(/\s*(\w+)\s*,\s*({.+})?/);
+        const layoutName = (match === null || match === void 0 ? void 0 : match[1]) || "";
+        const layoutArgs = match === null || match === void 0 ? void 0 : match[2];
+        const fnIsCached = cache.checkCache(layoutName);
+        if (!fnIsCached)
+            cache.addToCache(layoutName, () => compile(readFile(getLayoutPath(layoutName, config)), config, cache));
+        returnStr += `tR = cache.${layoutName}(cache, Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
+    }
     return returnStr;
 }
 
 /* END TYPES */
-const defaultConfig = {
-    autoEscape: true,
-    autoTrim: [false, "nl"],
-    e: XMLEscape,
-    parse: {
-        exec: "",
-        interpolate: "=",
-        raw: "~",
-        include: "+",
-        layout: "#",
-    },
-    rmWhitespace: false,
-    tags: ["<%", "%>"],
-    useWith: false,
-    varName: "it",
-    layoutsPath: "src/layouts",
-    inclusionsPath: "src/includes",
-    viewsPath: "src/views",
-};
-
-/* END TYPES */
-function compile(str, config) {
-    const options = config || defaultConfig;
+function compile(str, config, cache) {
     try {
-        return new Function(options.varName, compileToString(str, options));
+        return new Function("cache", config.varName, compileToString(str, config, cache));
     }
     catch (e) {
         if (e instanceof SyntaxError) {
@@ -447,13 +424,47 @@ function compile(str, config) {
                 "\n" +
                 Array(e.message.length + 1).join("=") +
                 "\n" +
-                compileToString(str, options) +
+                compileToString(str, config, cache) +
                 "\n" // This will put an extra newline before the callstack for extra readability
             );
         }
         else {
             throw e;
         }
+    }
+}
+class Cache {
+    constructor() {
+        this.addToCache = (name, fnMaker) => {
+            this.store[name] = true;
+            this.store[name] = fnMaker();
+        };
+        this.checkCache = (name) => this.store.hasOwnProperty(name);
+        this.getStore = () => this.store;
+        this.store = {};
+    }
+}
+
+/* END TYPES */
+class Config {
+    constructor(props) {
+        this.escape = XMLEscape;
+        this.autoEscape = true;
+        this.autoTrim = [false, "nl"];
+        this.parse = {
+            exec: "",
+            interpolate: "=",
+            raw: "~",
+            include: "+",
+            layout: "#",
+        };
+        this.rmWhitespace = false;
+        this.tags = ["<%", "%>"];
+        this.useWith = false;
+        this.varName = "it";
+        this.layoutsPath = "src/layouts";
+        this.inclusionsPath = "src/includes";
+        this.viewsPath = "src/views";
     }
 }
 
@@ -467,20 +478,16 @@ class Kex {
             this.config = Object.assign(Object.assign({}, this.config), newParams);
         };
         this.compileString = (template) => {
-            return compile(template, this.config);
+            const compiledFn = compile(template, this.config, this.cache);
+            return (data) => compiledFn({}, data);
         };
         this.compileView = (viewName) => {
             const viewTemplate = readFile(getViewPath(viewName, this.config));
-            return compile(viewTemplate, this.config);
+            const compiledFn = compile(viewTemplate, this.config, this.cache);
+            return compiledFn;
         };
-        this.renderString = (tempalte, data) => {
-            return compile(tempalte, this.config)(data);
-        };
-        this.renderView = (viewName, data) => {
-            const viewTemplate = readFile(getViewPath(viewName, this.config));
-            return compile(viewTemplate, this.config)(data);
-        };
-        this.config = option ? Object.assign(Object.assign({}, defaultConfig), option) : defaultConfig;
+        this.config = new Config();
+        this.cache = new Cache();
     }
 }
 
@@ -490,20 +497,16 @@ const host = "localhost";
 const port = 8000;
 app.use(express__default["default"].static("public"));
 let TEST_PREC_FIRST_REQ = true;
-const views = compileViews(new Kex());
-fs__default["default"].writeFile("tests/serv-logs.js", views.test.toString(), function (err) {
-    if (err) {
-        return console.log(err);
-    }
-    console.log("The logs was saved!");
-});
+const kexEngine = new Kex();
+const views = compileViews(kexEngine);
 app.get("/test", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const reqReceived = Date.now();
-    let NOTICE_FOR_LOG = "kex";
     const comments = JSON.parse(fs__default["default"].readFileSync("tests/HNData.json", "utf8"));
+    fs__default["default"].writeFileSync("tests/serv-logs.js", views.test.toString());
+    const reqReceived = Date.now();
+    let NOTICE_FOR_LOG = "kex, caching";
     res.status(200).send(views.test({ comments: comments }));
     const endProc = Date.now();
-    fs__default["default"].writeFile("tests/serv-logs.txt", `${TEST_PREC_FIRST_REQ ? "\n" : ""}Time: ${new Date().toLocaleString()}. Render duration: ${endProc - reqReceived}ms. Source: ${TEST_PREC_FIRST_REQ ? "render" : "cache"}. Details: ${NOTICE_FOR_LOG}\n`, { flag: "a+" }, function (err) {
+    fs__default["default"].writeFile("tests/serv-logs-caches.txt", `${TEST_PREC_FIRST_REQ ? "\n" : ""}Time: ${new Date().toLocaleString()}. Render duration: ${endProc - reqReceived}ms. Source: ${TEST_PREC_FIRST_REQ ? "render" : "cache"}. Details: ${NOTICE_FOR_LOG}\n`, { flag: "a+" }, function (err) {
         if (err) {
             return console.log(err);
         }

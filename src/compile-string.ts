@@ -1,35 +1,31 @@
-import parse from "./parse";
+import parse from "parse";
 import compile from "compile";
 import { getInclusionPath, getLayoutPath, readFile } from "file-utils";
 
 /* TYPES */
 import type { AstObject } from "./parse";
-import type { Config } from "config";
+import type Config from "config";
+import type { Cache } from "compile";
 /* END TYPES */
 
 export default function compileToString(
   str: string,
   config: Config,
-  cache?: { declarations: string; [index: string]: boolean | string }
+  cache: Cache
 ): string {
-  const compileCache = cache || { declarations: "" };
   const buffer: Array<AstObject> = parse(str, config);
   let res =
     "let tR=''\n" +
     (config.useWith ? "with(" + config.varName + "||{}){" : "") +
-    compileScope(buffer, config, compileCache) +
+    compileScope(buffer, config, cache) +
     "return tR" +
     (config.useWith ? "}" : "");
 
   if (cache) return res;
-  return compileCache.declarations + res;
+  return res;
 }
 
-function compileScope(
-  buff: Array<AstObject>,
-  config: Config,
-  cache: { declarations: string; [index: string]: boolean | string }
-) {
+function compileScope(buff: Array<AstObject>, config: Config, cache: Cache) {
   let i = 0;
   const buffLength = buff.length;
   let returnStr = "";
@@ -47,16 +43,12 @@ function compileScope(
       if (type === "r") {
         returnStr += "tR+=" + content + "\n";
       } else if (type === "i") {
-        const escapeIsExist = cache.escape;
-        if (!escapeIsExist) {
-          cache.escape = true;
-          cache.declarations =
-            cache.declarations +
-            `function escape(string){ return ${config.e.toString()}(string) }\n`;
-        }
-
         if (config.autoEscape) {
-          content = `escape(${content})`;
+          const fnIsCached = cache.checkCache("escape");
+          if (!fnIsCached) {
+            cache.addToCache("escape", () => config.escape);
+          }
+          content = `cache.escape(${content})`;
         }
         returnStr += "tR+=" + content + "\n";
         // reference
@@ -65,20 +57,17 @@ function compileScope(
         const inclusionName = match?.[1] || "";
         const inclusionArgs = match?.[2];
 
-        const inclusionAreCached = cache.hasOwnProperty(inclusionName);
+        const fnIsCached = cache.checkCache(inclusionName);
 
-        if (!inclusionAreCached) {
-          const fileTemplate = readFile(
-            getInclusionPath(inclusionName, config)
+        if (!fnIsCached)
+          cache.addToCache(inclusionName, () =>
+            compile(
+              readFile(getInclusionPath(inclusionName, config)),
+              config,
+              cache
+            )
           );
-          cache[inclusionName] = true;
-          const includeFunctionDec =
-            `function ${inclusionName}(${config.varName})` +
-            `{${compileToString(fileTemplate, config, cache)}}\n`;
-          cache.declarations = cache.declarations + includeFunctionDec;
-        }
-
-        content = `${inclusionName}(${inclusionArgs})`;
+        content = `cache.${inclusionName}(cache, ${inclusionArgs})`;
         returnStr += "tR+=" + content + "\n";
       } else if (type === "lay") {
         layoutContent = content;
@@ -94,11 +83,14 @@ function compileScope(
     const layoutName = match?.[1] || "";
     const layoutArgs = match?.[2];
 
-    const fileTemplate = readFile(getLayoutPath(layoutName, config));
+    const fnIsCached = cache.checkCache(layoutName);
 
-    returnStr += `tR = (${compile(fileTemplate, config)})(Object.assign(${
-      config.varName
-    }, {body: tR}, ${layoutArgs}))\n`;
+    if (!fnIsCached)
+      cache.addToCache(layoutName, () =>
+        compile(readFile(getLayoutPath(layoutName, config)), config, cache)
+      );
+
+    returnStr += `tR = cache.${layoutName}(cache, Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
   }
 
   return returnStr;

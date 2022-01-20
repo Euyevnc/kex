@@ -1,7 +1,5 @@
 import { trimLeft, trimRight } from "./polyfills";
-
-/* TYPES */
-import type { Config } from "config";
+import Config from "config";
 
 interface EscapeMap {
   "&": "&amp;";
