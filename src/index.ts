@@ -24,6 +24,7 @@ export default class Kex {
   compileView = (viewName: string) => {
     const viewTemplate = readFile(getViewPath(viewName, this.config));
     const { compiled, cache } = compile(viewTemplate, this.config);
+    console.log(compiled.toString());
     return (data: Record<string, any>) => compiled(data, cache);
   };
 

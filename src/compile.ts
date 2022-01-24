@@ -1,6 +1,6 @@
 import compileToString from "./compile-string";
 import Config from "config";
-import EtaErr from "./err";
+import Err from "./err";
 
 /* TYPES */
 export type TemplateFunction = (data?: any, cache?: CacheStore) => string;
@@ -25,7 +25,7 @@ export default function compile(
     return { compiled: compileFn, cache: compileCache.getStore() };
   } catch (e) {
     if (e instanceof SyntaxError) {
-      throw EtaErr(
+      throw Err(
         "Bad template syntax\n\n" +
           e.message +
           "\n" +

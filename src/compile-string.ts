@@ -69,7 +69,6 @@ function compileScope(buff: Array<AstObject>, config: Config, cache: Cache) {
                 cache
               ).compiled
           );
-        console.log(inclusionName, inclusionArgs);
         content = `cache["${inclusionName}"](${inclusionArgs}, cache)`;
         returnStr += "tR+=" + content + "\n";
       } else if (type === "lay") {

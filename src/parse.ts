@@ -38,7 +38,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
     // each line and removes multiple newlines.
     str = str.replace(/[\r\n]+/g, "\n").replace(/^\s+|\s+$/gm, "");
   }
-  /* End rmWhitespace option */
 
   templateLitReg.lastIndex = 0;
   singleQuoteReg.lastIndex = 0;
@@ -46,8 +45,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
 
   function pushString(strng: string, shouldTrimRightOfString?: string | false) {
     if (strng) {
-      // if string is truthy it must be of type 'string'
-
       strng = trimWS(
         strng,
         config,
@@ -97,7 +94,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
     "'|\"|`|\\/\\*|(\\s*(-|_)?" + escapeRegExp(config.tags[1]) + ")",
     "g"
   );
-  // TODO: benchmark having the \s* on either side vs using str.trim()
 
   let m;
 

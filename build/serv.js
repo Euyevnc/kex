@@ -34,7 +34,6 @@ function __awaiter(thisArg, _arguments, P, generator) {
 }
 
 function setPrototypeOf(obj, proto) {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (Object.setPrototypeOf) {
         Object.setPrototypeOf(obj, proto);
     }
@@ -42,17 +41,14 @@ function setPrototypeOf(obj, proto) {
         obj.__proto__ = proto;
     }
 }
-function EtaErr(message) {
+function Err(message) {
     const err = new Error(message);
-    setPrototypeOf(err, EtaErr.prototype);
+    setPrototypeOf(err, Err.prototype);
     return err;
 }
-EtaErr.prototype = Object.create(Error.prototype, {
-    name: { value: "Eta Error", enumerable: false },
+Err.prototype = Object.create(Error.prototype, {
+    name: { value: "Error", enumerable: false },
 });
-/**
- * Throws an EtaErr with a nicely formatted error and message showing where in the template the error occurred.
- */
 function ParseErr(message, str, indx) {
     const whitespace = str.slice(0, indx).split(/\n/);
     const lineNo = whitespace.length;
@@ -69,18 +65,10 @@ function ParseErr(message, str, indx) {
             "  " +
             Array(colNo).join(" ") +
             "^";
-    throw EtaErr(message);
+    throw Err(message);
 }
 
-/**
- * str.trimLeft polyfill
- *
- * @param str - Input string
- * @returns The string with left whitespace removed
- *
- */
 function trimLeft(str) {
-    // eslint-disable-next-line no-extra-boolean-cast
     if (!!String.prototype.trimLeft) {
         return str.trimLeft();
     }
@@ -88,20 +76,12 @@ function trimLeft(str) {
         return str.replace(/^\s+/, "");
     }
 }
-/**
- * str.trimRight polyfill
- *
- * @param str - Input string
- * @returns The string with right whitespace removed
- *
- */
 function trimRight(str) {
-    // eslint-disable-next-line no-extra-boolean-cast
     if (!!String.prototype.trimRight) {
         return str.trimRight();
     }
     else {
-        return str.replace(/\s+$/, ""); // TODO: do we really need to replace BOM's?
+        return str.replace(/\s+$/, "");
     }
 }
 
@@ -134,18 +114,13 @@ function trimWS(str, config, wsLeft, wsRight) {
         str = str.replace(/^(?:\r\n|\n|\r)/, "");
     }
     if (rightTrim === "_" || rightTrim === "slurp") {
-        // full slurp
         str = trimRight(str);
     }
     else if (rightTrim === "-" || rightTrim === "nl") {
-        // nl trim
-        str = str.replace(/(?:\r\n|\n|\r)$/, ""); // TODO: make sure this gets \r\n
+        str = str.replace(/(?:\r\n|\n|\r)$/, "");
     }
     return str;
 }
-/**
- * A map of special HTML characters to their XML-escaped equivalents
- */
 const escMap = {
     "&": "&amp;",
     "<": "&lt;",
@@ -156,12 +131,6 @@ const escMap = {
 function replaceChar(s) {
     return escMap[s];
 }
-/**
- * XML-escapes an input value after converting it to a string
- *
- * @param str - Input value (usually a string)
- * @returns XML-escaped string
- */
 function XMLEscape(str) {
     const newStr = String(str);
     if (/[&<>"']/.test(newStr)) {
@@ -172,12 +141,11 @@ function XMLEscape(str) {
     }
 }
 
-/* END TYPES */
 const templateLitReg = /`(?:\\[\s\S]|\${(?:[^{}]|{(?:[^{}]|{[^}]*})*})*}|(?!\${)[^\\`])*`/g;
 const singleQuoteReg = /'(?:\\[\s\w"'\\`]|[^\n\r'\\])*?'/g;
 const doubleQuoteReg = /"(?:\\[\s\w"'\\`]|[^\n\r"\\])*?"/g;
 function escapeRegExp(string) {
-    return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+    return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
 }
 function parse(str, config) {
     let buffer = [];
@@ -185,25 +153,15 @@ function parse(str, config) {
     let lastIndex = 0;
     const parseOptions = config.parse;
     if (config.rmWhitespace) {
-        // Code taken directly from EJS
-        // Have to use two separate replaces here as `^` and `$` operators don't
-        // work well with `\r` and empty lines don't work well with the `m` flag.
-        // Essentially, this replaces the whitespace at the beginning and end of
-        // each line and removes multiple newlines.
         str = str.replace(/[\r\n]+/g, "\n").replace(/^\s+|\s+$/gm, "");
     }
-    /* End rmWhitespace option */
     templateLitReg.lastIndex = 0;
     singleQuoteReg.lastIndex = 0;
     doubleQuoteReg.lastIndex = 0;
     function pushString(strng, shouldTrimRightOfString) {
         if (strng) {
-            // if string is truthy it must be of type 'string'
-            strng = trimWS(strng, config, trimLeftOfNextStr, // this will only be false on the first str, the next ones will be null or undefined
-            shouldTrimRightOfString);
+            strng = trimWS(strng, config, trimLeftOfNextStr, shouldTrimRightOfString);
             if (strng) {
-                // replace \ with \\, ' with \'
-                // we're going to convert all CRLF to LF so it doesn't take more than one replace
                 strng = strng.replace(/\\|'/g, "\\$&").replace(/\r\n|\n|\r/g, "\\n");
                 buffer.push(strng);
             }
@@ -220,11 +178,9 @@ function parse(str, config) {
             return accumulator + "|" + escapeRegExp(prefix);
         }
         else if (prefix) {
-            // accumulator is falsy
             return escapeRegExp(prefix);
         }
         else {
-            // prefix and accumulator are both falsy
             return accumulator;
         }
     }, "");
@@ -234,13 +190,12 @@ function parse(str, config) {
         prefixes +
         ")?\\s*", "g");
     const parseCloseReg = new RegExp("'|\"|`|\\/\\*|(\\s*(-|_)?" + escapeRegExp(config.tags[1]) + ")", "g");
-    // TODO: benchmark having the \s* on either side vs using str.trim()
     let m;
     while ((m = parseOpenReg.exec(str))) {
         lastIndex = m[0].length + m.index;
         const precedingString = m[1];
         const wsLeft = m[2];
-        const prefix = m[3] || ""; // by default either ~, =, or empty
+        const prefix = m[3] || "";
         pushString(precedingString, wsLeft);
         parseCloseReg.lastIndex = lastIndex;
         let closeTag;
@@ -316,7 +271,6 @@ function parse(str, config) {
     return buffer;
 }
 
-/* END TYPES */
 function getInclusionPath(name, config) {
     const options = config;
     const path = `${options.inclusionsPath}/${name}/index.kex`;
@@ -341,7 +295,6 @@ function readFile(filePath) {
     }
 }
 
-/* END TYPES */
 function compileToString(str, config, cache) {
     const buffer = parse(str, config);
     let res = "let tR=''\n" +
@@ -379,7 +332,6 @@ function compileScope(buff, config, cache) {
                     content = `cache.escape(${content})`;
                 }
                 returnStr += "tR+=" + content + "\n";
-                // reference
             }
             else if (type === "inc") {
                 const match = content.match(/\s*([\w-]+)\s*(,\s*({.+}))?/);
@@ -388,7 +340,6 @@ function compileScope(buff, config, cache) {
                 const fnIsCached = cache.checkCache(inclusionName);
                 if (!fnIsCached)
                     cache.addToCache(inclusionName, () => compile(readFile(getInclusionPath(inclusionName, config)), config, cache).compiled);
-                console.log(inclusionName, inclusionArgs);
                 content = `cache["${inclusionName}"](${inclusionArgs}, cache)`;
                 returnStr += "tR+=" + content + "\n";
             }
@@ -396,8 +347,7 @@ function compileScope(buff, config, cache) {
                 layoutContent = content;
             }
             else if (type === "e") {
-                // execute
-                returnStr += content + "\n"; // you need a \n in case you have <% } %>
+                returnStr += content + "\n";
             }
         }
     }
@@ -414,7 +364,6 @@ function compileScope(buff, config, cache) {
     return returnStr;
 }
 
-/* END TYPES */
 function compile(str, config, cache) {
     const compileCache = cache || new Cache();
     try {
@@ -423,14 +372,13 @@ function compile(str, config, cache) {
     }
     catch (e) {
         if (e instanceof SyntaxError) {
-            throw EtaErr("Bad template syntax\n\n" +
+            throw Err("Bad template syntax\n\n" +
                 e.message +
                 "\n" +
                 Array(e.message.length + 1).join("=") +
                 "\n" +
                 compileToString(str, config, compileCache) +
-                "\n" // This will put an extra newline before the callstack for extra readability
-            );
+                "\n");
         }
         else {
             throw e;
@@ -449,7 +397,6 @@ class Cache {
     }
 }
 
-/* END TYPES */
 class Config {
     constructor(props) {
         this.escape = XMLEscape;
@@ -487,6 +434,7 @@ class Kex {
         this.compileView = (viewName) => {
             const viewTemplate = readFile(getViewPath(viewName, this.config));
             const { compiled, cache } = compile(viewTemplate, this.config);
+            console.log(compiled.toString());
             return (data) => compiled(data, cache);
         };
         this.renderString = (tempalte, data) => {
