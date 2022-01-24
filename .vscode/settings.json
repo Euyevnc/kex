@@ -17,6 +17,12 @@
   "[javascript]": {
     "editor.defaultFormatter": null
   },
+  "files.associations": {
+    "*.kex": "eta"
+  },
+  "emmet.includeLanguages": {
+    "eta": "eta"
+  },
   "bemHelper.elementSeparator": "__",
   "bemHelper.modifierSeparator": "_",
   "bemHelper.classNameCase": "any"

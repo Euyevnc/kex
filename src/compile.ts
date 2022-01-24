@@ -3,21 +3,26 @@ import Config from "config";
 import EtaErr from "./err";
 
 /* TYPES */
-export type TemplateFunction = (cach: CacheStore, data?: any) => string;
-export type CacheStore = Record<string, TemplateFunction | boolean>;
+export type TemplateFunction = (data?: any, cache?: CacheStore) => string;
+export type CacheStore = Record<string, TemplateFunction>;
 /* END TYPES */
 
 export default function compile(
   str: string,
   config: Config,
-  cache: Cache
-): TemplateFunction {
+  cache?: Cache
+): {
+  compiled: TemplateFunction;
+  cache: Record<string, TemplateFunction>;
+} {
+  const compileCache = cache || new Cache();
   try {
-    return new Function(
-      "cache",
+    const compileFn = new Function(
       config.varName,
-      compileToString(str, config, cache)
+      "cache",
+      compileToString(str, config, compileCache)
     ) as TemplateFunction;
+    return { compiled: compileFn, cache: compileCache.getStore() };
   } catch (e) {
     if (e instanceof SyntaxError) {
       throw EtaErr(
@@ -26,7 +31,7 @@ export default function compile(
           "\n" +
           Array(e.message.length + 1).join("=") +
           "\n" +
-          compileToString(str, config, cache) +
+          compileToString(str, config, compileCache) +
           "\n" // This will put an extra newline before the callstack for extra readability
       );
     } else {
@@ -43,7 +48,7 @@ export class Cache {
   }
 
   addToCache = (name: string, fnMaker: () => (it: any) => string) => {
-    this.store[name] = true;
+    this.store[name] = () => "";
     this.store[name] = fnMaker();
   };
 

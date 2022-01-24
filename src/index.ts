@@ -1,18 +1,11 @@
 import compile from "compile";
 import { getViewPath, readFile } from "file-utils";
 import Config from "config";
-import { Cache } from "./compile";
-
-/* TYPES */
-import type { CacheStore } from "compile";
-/* END TYPES */
 
 export default class Kex {
   private config: Config;
-  cache: Cache;
   constructor(option?: Config) {
     this.config = new Config();
-    this.cache = new Cache();
   }
 
   getConfig = () => {
@@ -24,22 +17,23 @@ export default class Kex {
   };
 
   compileString = (template: string) => {
-    const compiledFn = compile(template, this.config, this.cache);
-    return (data: any) => compiledFn({}, data);
+    const { compiled, cache } = compile(template, this.config);
+    return (data: Record<string, any>) => compiled(data, cache);
   };
 
   compileView = (viewName: string) => {
     const viewTemplate = readFile(getViewPath(viewName, this.config));
-    const compiledFn = compile(viewTemplate, this.config, this.cache);
-    return (data: any) => compiledFn(this.cache.getStore(), data);
+    const { compiled, cache } = compile(viewTemplate, this.config);
+    return (data: Record<string, any>) => compiled(data, cache);
   };
 
-  // renderString = (tempalte: string, data: Record<string, any>) => {
-  //   return compile(tempalte, this.config, this.cache)(data);
-  // };
+  renderString = (tempalte: string, data: Record<string, any>) => {
+    const { compiled, cache } = compile(tempalte, this.config);
+    return compiled(data, cache);
+  };
 
-  // renderView = (viewName: string, data: Record<string, any>) => {
-  //   const viewTemplate = readFile(getViewPath(viewName, this.config));
-  //   return compile(viewTemplate, this.config, this.cache)(data);
-  // };
+  renderView = (viewName: string, data: Record<string, any>) => {
+    const { compiled, cache } = compile(viewName, this.config);
+    return compiled(data, cache);
+  };
 }

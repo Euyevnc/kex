@@ -53,21 +53,24 @@ function compileScope(buff: Array<AstObject>, config: Config, cache: Cache) {
         returnStr += "tR+=" + content + "\n";
         // reference
       } else if (type === "inc") {
-        const match = content.match(/\s*(\w+)\s*,\s*({.+})/);
+        const match = content.match(/\s*([\w-]+)\s*(,\s*({.+}))?/);
         const inclusionName = match?.[1] || "";
-        const inclusionArgs = match?.[2];
+        const inclusionArgs = match?.[3];
 
         const fnIsCached = cache.checkCache(inclusionName);
 
         if (!fnIsCached)
-          cache.addToCache(inclusionName, () =>
-            compile(
-              readFile(getInclusionPath(inclusionName, config)),
-              config,
-              cache
-            )
+          cache.addToCache(
+            inclusionName,
+            () =>
+              compile(
+                readFile(getInclusionPath(inclusionName, config)),
+                config,
+                cache
+              ).compiled
           );
-        content = `cache.${inclusionName}(cache, ${inclusionArgs})`;
+        console.log(inclusionName, inclusionArgs);
+        content = `cache["${inclusionName}"](${inclusionArgs}, cache)`;
         returnStr += "tR+=" + content + "\n";
       } else if (type === "lay") {
         layoutContent = content;
@@ -79,18 +82,21 @@ function compileScope(buff: Array<AstObject>, config: Config, cache: Cache) {
   }
 
   if (layoutContent) {
-    const match = layoutContent.match(/\s*(\w+)\s*,\s*({.+})?/);
+    const match = layoutContent.match(/\s*([\w-]+)\s*(,\s*({.+}))?/);
     const layoutName = match?.[1] || "";
-    const layoutArgs = match?.[2];
+    const layoutArgs = match?.[3];
 
     const fnIsCached = cache.checkCache(layoutName);
 
     if (!fnIsCached)
-      cache.addToCache(layoutName, () =>
-        compile(readFile(getLayoutPath(layoutName, config)), config, cache)
+      cache.addToCache(
+        layoutName,
+        () =>
+          compile(readFile(getLayoutPath(layoutName, config)), config, cache)
+            .compiled
       );
 
-    returnStr += `tR = cache.${layoutName}(cache, Object.assign(${config.varName}, {body: tR}, ${layoutArgs}))\n`;
+    returnStr += `tR = cache["${layoutName}"](Object.assign(${config.varName}, {body: tR}, ${layoutArgs}), cache)\n`;
   }
 
   return returnStr;

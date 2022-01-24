@@ -1,0 +1,9 @@
+<%/*
+  it.postsList: {title: string, body: string, author: string, publishes: string}[]
+*/%>
+
+<div class="posts-list">
+  <% it.postsList.forEach( function(post){ %>
+    <%+ post-demo, { post }) %>
+  <% }) %>
+</div>

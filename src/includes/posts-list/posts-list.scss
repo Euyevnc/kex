@@ -1,0 +1,7 @@
+@import "../../scss/variables.scss";
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  row-gap: 15px;
+}
