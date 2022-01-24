@@ -1,7 +1,0 @@
-<section class="test">
-  <main class="test__comm-list">
-    <%+ comments, { comment: it.comments }) %>
-  </main>
-</section>
-
-<%# main, {viewName: 'test'} %>

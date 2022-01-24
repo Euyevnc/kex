@@ -4,8 +4,7 @@
   "description": "view engine",
   "main": "./src/index.ts",
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin typescript",
-    "srv": "yarn run build && node build/serv.js"
+    "build": "rollup --config rollup.config.ts --configPlugin typescript"
   },
   "repository": {
     "type": "git",
