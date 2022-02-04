@@ -1,7 +1,7 @@
 import typescript from "@rollup/plugin-typescript";
 
 const pluginConfig = {
-  input: `tests/serv.ts`,
+  input: `src/index.ts`,
   output: {
     dir: "build",
     format: "cjs",
