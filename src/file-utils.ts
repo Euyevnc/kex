@@ -1,24 +1,24 @@
 import { readFileSync } from "fs";
 
 /* TYPES */
-import type Config from "config";
+import type { ConfigT } from "./config";
 /* END TYPES */
 
-function getInclusionPath(name: string, config: Config): string {
+function getInclusionPath(name: string, config: ConfigT): string {
   const options = config;
   const path = `${options.inclusionsPath}/${name}/index.kex`;
 
   return path;
 }
 
-function getLayoutPath(name: string, config: Config): string {
+function getLayoutPath(name: string, config: ConfigT): string {
   const options = config;
   const path = `${options.layoutsPath}/${name}/index.kex`;
 
   return path;
 }
 
-function getViewPath(name: string, config: Config): string {
+function getViewPath(name: string, config: ConfigT): string {
   const options = config;
   const path = `${options.viewsPath}/${name}/index.kex`;
 

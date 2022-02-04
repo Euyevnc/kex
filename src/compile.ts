@@ -1,15 +1,18 @@
 import compileToString from "./compile-string";
-import Config from "config";
-import EtaErr from "./err";
+import Err from "./err";
 
 /* TYPES */
-export type TemplateFunction = (data?: any, cache?: CacheStore) => string;
+export type TemplateFunction = (
+  data?: Record<string, unknown>,
+  cache?: CacheStore
+) => string;
 export type CacheStore = Record<string, TemplateFunction>;
+import type { ConfigT } from "./config";
 /* END TYPES */
 
 export default function compile(
   str: string,
-  config: Config,
+  config: ConfigT,
   cache?: Cache
 ): {
   compiled: TemplateFunction;
@@ -25,7 +28,7 @@ export default function compile(
     return { compiled: compileFn, cache: compileCache.getStore() };
   } catch (e) {
     if (e instanceof SyntaxError) {
-      throw EtaErr(
+      throw Err(
         "Bad template syntax\n\n" +
           e.message +
           "\n" +
@@ -47,12 +50,13 @@ export class Cache {
     this.store = {};
   }
 
-  addToCache = (name: string, fnMaker: () => (it: any) => string) => {
+  addToCache = (name: string, fnMaker: () => TemplateFunction) => {
     this.store[name] = () => "";
     this.store[name] = fnMaker();
   };
 
-  checkCache = (name: string) => this.store.hasOwnProperty(name);
+  checkCache = (name: string) =>
+    Object.prototype.hasOwnProperty.call(this.store, name);
 
   getStore = () => this.store;
 }

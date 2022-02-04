@@ -1,17 +1,3 @@
-import Err from "./err";
-
-export function getAsyncFunctionConstructor(): Function {
-  try {
-    return new Function("return (async function(){}).constructor")();
-  } catch (e) {
-    if (e instanceof SyntaxError) {
-      throw Err("This environment doesn't support async/await");
-    } else {
-      throw e;
-    }
-  }
-}
-
 /**
  * str.trimLeft polyfill
  *

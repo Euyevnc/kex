@@ -1,6 +1,7 @@
 import { trimLeft, trimRight } from "./polyfills";
-import Config from "config";
 
+/* TYPES */
+import type { ConfigT } from "./config";
 interface EscapeMap {
   "&": "&amp;";
   "<": "&lt;";
@@ -26,7 +27,7 @@ export function copyProps<T>(toObj: T, fromObj: T): T {
 
 function trimWS(
   str: string,
-  config: Config,
+  config: ConfigT,
   wsLeft: string | false,
   wsRight?: string | false
 ): string {

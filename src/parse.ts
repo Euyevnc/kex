@@ -2,15 +2,13 @@ import { ParseErr } from "./err";
 import { trimWS } from "./utils";
 
 /* TYPES */
-import type Config from "config";
-export type TagType = "r" | "e" | "i" | "inc" | "lay" | "";
+import type { ConfigT } from "./config";
 
 export interface TemplateObject {
-  t: TagType;
-  val: string;
+  type: string;
+  value: string;
 }
 
-export type AstObject = string | TemplateObject;
 /* END TYPES */
 
 const templateLitReg =
@@ -24,11 +22,14 @@ function escapeRegExp(string: string) {
   return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
 
-export default function parse(str: string, config: Config): Array<AstObject> {
-  let buffer: Array<AstObject> = [];
+export default function parse(
+  str: string,
+  config: ConfigT
+): Array<TemplateObject> {
+  const buffer: Array<TemplateObject> = [];
   let trimLeftOfNextStr: string | false = false;
   let lastIndex = 0;
-  const parseOptions = config.parse;
+  const parseOptions = config.customParse;
 
   if (config.rmWhitespace) {
     // Code taken directly from EJS
@@ -38,7 +39,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
     // each line and removes multiple newlines.
     str = str.replace(/[\r\n]+/g, "\n").replace(/^\s+|\s+$/gm, "");
   }
-  /* End rmWhitespace option */
 
   templateLitReg.lastIndex = 0;
   singleQuoteReg.lastIndex = 0;
@@ -46,8 +46,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
 
   function pushString(strng: string, shouldTrimRightOfString?: string | false) {
     if (strng) {
-      // if string is truthy it must be of type 'string'
-
       strng = trimWS(
         strng,
         config,
@@ -61,18 +59,14 @@ export default function parse(str: string, config: Config): Array<AstObject> {
 
         strng = strng.replace(/\\|'/g, "\\$&").replace(/\r\n|\n|\r/g, "\\n");
 
-        buffer.push(strng);
+        buffer.push({ type: "string", value: strng });
       }
     }
   }
 
-  const prefixes = [
-    parseOptions.exec,
-    parseOptions.interpolate,
-    parseOptions.raw,
-    parseOptions.include,
-    parseOptions.layout,
-  ].reduce(function (accumulator, prefix) {
+  const prefixes = Object.values(parseOptions).map((option) => option.prefix);
+
+  const prefixesRegExp = prefixes.reduce(function (accumulator, prefix) {
     if (accumulator && prefix) {
       return accumulator + "|" + escapeRegExp(prefix);
     } else if (prefix) {
@@ -88,7 +82,7 @@ export default function parse(str: string, config: Config): Array<AstObject> {
     "([^]*?)" +
       escapeRegExp(config.tags[0]) +
       "(-|_)?\\s*(" +
-      prefixes +
+      prefixesRegExp +
       ")?\\s*",
     "g"
   );
@@ -97,7 +91,6 @@ export default function parse(str: string, config: Config): Array<AstObject> {
     "'|\"|`|\\/\\*|(\\s*(-|_)?" + escapeRegExp(config.tags[1]) + ")",
     "g"
   );
-  // TODO: benchmark having the \s* on either side vs using str.trim()
 
   let m;
 
@@ -106,35 +99,25 @@ export default function parse(str: string, config: Config): Array<AstObject> {
 
     const precedingString = m[1];
     const wsLeft = m[2];
-    const prefix = m[3] || ""; // by default either ~, =, or empty
+    const prefix = m[3] || "";
 
     pushString(precedingString, wsLeft);
 
     parseCloseReg.lastIndex = lastIndex;
     let closeTag;
-    let currentObj: AstObject | false = false;
+    let currentObj: TemplateObject | false = false;
 
     while ((closeTag = parseCloseReg.exec(str))) {
       if (closeTag[1]) {
-        let content = str.slice(lastIndex, closeTag.index);
+        const content = str.slice(lastIndex, closeTag.index);
 
         parseOpenReg.lastIndex = lastIndex = parseCloseReg.lastIndex;
 
         trimLeftOfNextStr = closeTag[2];
 
-        const currentType: TagType =
-          prefix === parseOptions.exec
-            ? "e"
-            : prefix === parseOptions.raw
-            ? "r"
-            : prefix === parseOptions.interpolate
-            ? "i"
-            : prefix === parseOptions.include
-            ? "inc"
-            : prefix === parseOptions.layout
-            ? "lay"
-            : "";
-        currentObj = { t: currentType, val: content };
+        const currentType = Object.keys(parseOptions)[prefixes.indexOf(prefix)];
+
+        if (currentType) currentObj = { type: currentType, value: content };
         break;
       } else {
         const char = closeTag[0];

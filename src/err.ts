@@ -7,19 +7,15 @@ function setPrototypeOf(obj: any, proto: any) {
   }
 }
 
-export default function EtaErr(message: string): Error {
+export default function Err(message: string): Error {
   const err = new Error(message);
-  setPrototypeOf(err, EtaErr.prototype);
+  setPrototypeOf(err, Err.prototype);
   return err;
 }
 
-EtaErr.prototype = Object.create(Error.prototype, {
-  name: { value: "Eta Error", enumerable: false },
+Err.prototype = Object.create(Error.prototype, {
+  name: { value: "Error", enumerable: false },
 });
-
-/**
- * Throws an EtaErr with a nicely formatted error and message showing where in the template the error occurred.
- */
 
 export function ParseErr(message: string, str: string, indx: number): void {
   const whitespace = str.slice(0, indx).split(/\n/);
@@ -38,5 +34,5 @@ export function ParseErr(message: string, str: string, indx: number): void {
     "  " +
     Array(colNo).join(" ") +
     "^";
-  throw EtaErr(message);
+  throw Err(message);
 }
